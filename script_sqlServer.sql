@@ -331,3 +331,55 @@ BEGIN
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Crear una función de partición para la tabla Transactions
+CREATE PARTITION FUNCTION TransactionDateRange (DATETIME)
+AS RANGE RIGHT FOR VALUES ('2023-01-01', '2024-01-01');
+
+-- Crear un esquema de partición
+CREATE PARTITION SCHEME TransactionPartitionScheme
+AS PARTITION TransactionDateRange
+TO ([PRIMARY], [SECONDARY], [TERTIARY]);
+
+-- Aplicar el esquema de partición a la tabla Transactions
+CREATE TABLE Transactions
+(
+    id_transaction INT PRIMARY KEY IDENTITY(1,1),
+    type_transaction NVARCHAR(10) CHECK(type_transaction IN ('DEPOSITO', 'RETIRO')),
+    amount_transaction DECIMAL(18,2) DEFAULT 0.00 NOT NULL,
+    id_account_transaction INT NOT NULL,
+    id_atm_transaction INT NOT NULL,
+    CREATED_DATE DATETIME NOT NULL DEFAULT GETDATE(),
+    UPDATED_DATE DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (id_account_transaction) REFERENCES ACCOUNTS(id_account),
+    FOREIGN KEY (id_atm_transaction) REFERENCES ATMS(id_atm)
+) ON TransactionPartitionScheme(CREATED_DATE);
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+--Compresión de Datos para Ahorrar Espacio 
+
+ALTER TABLE Transactions REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE);
+
+ALTER TABLE ACCOUNTS REBUILD PARTITION = ALL WITH (DATA_COMPRESSION = PAGE);
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Optimización para Gran Escala
+ALTER DATABASE BANKING SET READ_COMMITTED_SNAPSHOT ON;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Optimización de la Memoria del Servidor SQL
+EXEC sp_configure 'show advanced options', 1;  
+RECONFIGURE;  
+EXEC sp_configure 'min server memory', 4096; 
+EXEC sp_configure 'max server memory', 16384;  
+RECONFIGURE;
+
+--Optimización de Bloqueos con Snapshot Isolation
+ALTER DATABASE BANKING  
+SET ALLOW_SNAPSHOT_ISOLATION ON;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
