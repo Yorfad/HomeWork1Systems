@@ -1,34 +1,12 @@
-## DESCRIPTION PROJECT ON GITHUB FROM THE COURSE "SYSTEMS ANALYSIS" BY ING. RICHARD ORTIZ
+Hi , my proyect sistems operativs
 
-A course project that consists of creating a repository.
+BANKING Database Description This project implements a database to manage banking information in Microsoft SQL Server 2022. The database stores information about central banks, branches, ATMs, account holders, bank accounts and transactions. Database Structure The database consists of the following tables:
 
-## INSTRUCTIONS55
-
-1. Create a repository on GitHub.
-2. Create a README.md file.
-3. Write a description of the project in the README.md file.
-4. Add the README.md file to the repository.
-5. Share the repository link.
-
-## AUTHOR
-
-- **Name**: Richard Ortiz
-- **Email**: <rortizs@miumg.edu.gt>
-- **GitHub**: [Richard Ortiz](https://github.com/rortizs)
-
-## GIT COMMANDS
-
-```bash git init # Initialize the repository
-git add README.md # Add the README.md file to the repository
-git commit -m "Initial commit" # Commit the changes
-git branch -M main # Rename the branch to main or branch name you want
-git remote add origin
-git push -u origin main # Push the changes to the repository
-```
-
-## LICENSE
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-```
+CENTRALS:
+BRANCHES:
+ATMS:
+ACCOUNTS_HOLDERS:
+ACCOUNTS:
+TRANSACTIONS:
+Implemented Functionalities ● Bank management: Allows registration of central banks, branches, and ATMs. ● Customer and account management: Stores information about customers and their bank accounts. ● Transaction management: Controls deposits and withdrawals through ATMs. Performance optimization: Use of indexes, partitioning and data compression to improve query efficiency. ● Security and concurrency: Enabling Snapshot Isolation to avoid deadlocks and improve data consistency. Example SQL queries To visualize the data, the following queries can be executed: SELECT * FROM CENTRALS; SELECT * FROM BRANCHES; SELECT * FROM ATMS; SELECT * FROM ACCOUNTS_HOLDERS; SELECT * FROM ACCOUNTS; SELECT * FROM TRANSACTIONS;
 
