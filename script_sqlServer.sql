@@ -245,3 +245,56 @@ SELECT * FROM Transactions WHERE type_transaction = 'DEPOSITO';
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Vista para obtener información detallada de cuentas con sus titulares
+CREATE VIEW AccountDetails AS
+SELECT 
+    a.id_account,
+    a.number_account,
+    a.type_account,
+    a.currency_account,
+    a.balance_account,
+    ah.name_account_holder,
+    ah.email_account_holder,
+    b.name_branch AS branch_name
+FROM 
+    ACCOUNTS a
+    INNER JOIN ACCOUNTS_HOLDERS ah ON a.id_account_holder_account = ah.id_account_holder
+    INNER JOIN BRANCHES b ON a.id_branch_account = b.id_branch;
+
+-- Seleccionar datos de la vista
+SELECT * FROM AccountDetails;
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Procedimiento para realizar un depósito
+CREATE PROCEDURE DepositMoney
+    @account_id INT,
+    @amount DECIMAL(18, 2),
+    @atm_id INT
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    -- Actualizar el saldo de la cuenta
+    UPDATE ACCOUNTS
+    SET balance_account = balance_account + @amount
+    WHERE id_account = @account_id;
+
+    -- Registrar la transacción
+    INSERT INTO Transactions (type_transaction, amount_transaction, id_account_transaction, id_atm_transaction, CREATED_DATE, UPDATED_DATE)
+    VALUES ('DEPOSITO', @amount, @account_id, @atm_id, GETDATE(), GETDATE());
+
+    COMMIT TRANSACTION;
+END;
+
+-- Ejecutar el procedimiento para depositar $100 en la cuenta con ID 1, usando el cajero con ID 1
+EXEC DepositMoney @account_id = 1, @amount = 100.00, @atm_id = 1;
+
+-- Verificar el saldo de la cuenta
+SELECT * FROM ACCOUNTS WHERE id_account = 1;
+
+-- Verificar la transacción registrada
+SELECT * FROM Transactions WHERE id_account_transaction = 1;
