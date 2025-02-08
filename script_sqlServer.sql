@@ -298,3 +298,36 @@ SELECT * FROM ACCOUNTS WHERE id_account = 1;
 
 -- Verificar la transacción registrada
 SELECT * FROM Transactions WHERE id_account_transaction = 1;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Tabla de auditoría para ACCOUNTS
+CREATE TABLE AuditAccounts
+(
+    id_audit INT PRIMARY KEY IDENTITY(1,1),
+    id_account INT,
+    old_balance DECIMAL(18,2),
+    new_balance DECIMAL(18,2),
+    change_date DATETIME,
+    user_action NVARCHAR(50)
+);
+
+-- Trigger para auditar cambios en el saldo de las cuentas
+CREATE TRIGGER trg_AuditAccountBalance
+ON ACCOUNTS
+AFTER UPDATE
+AS
+BEGIN
+    INSERT INTO AuditAccounts (id_account, old_balance, new_balance, change_date, user_action)
+    SELECT 
+        i.id_account,
+        d.balance_account AS old_balance,
+        i.balance_account AS new_balance,
+        GETDATE(),
+        SYSTEM_USER
+    FROM 
+        inserted i
+        INNER JOIN deleted d ON i.id_account = d.id_account;
+END;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
