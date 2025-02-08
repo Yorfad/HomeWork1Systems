@@ -190,3 +190,144 @@ VALUES
 ('RETIRO', 900.00, 10, 10, '2023-10-01', '2023-10-01');
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT * 
+FROM CENTRALS;
+
+SELECT * 
+FROM BRANCHES;
+
+SELECT * 
+FROM ATMS;
+
+SELECT * 
+FROM ACCOUNTS_HOLDERS;
+
+SELECT * 
+FROM ACCOUNTS;
+
+SELECT * 
+FROM TRANSACTIONS;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Índices para mejorar el rendimiento
+CREATE INDEX idx_branches_central ON BRANCHES(id_central_branch);
+CREATE INDEX idx_atms_branch ON ATMS(id_branch_atm);
+CREATE INDEX idx_accounts_holder ON ACCOUNTS(id_account_holder_account);
+CREATE INDEX idx_accounts_branch ON ACCOUNTS(id_branch_account);
+CREATE INDEX idx_transactions_account ON Transactions(id_account_transaction);
+CREATE INDEX idx_transactions_atm ON Transactions(id_atm_transaction);
+
+
+SELECT b.name_branch, c.name_central
+FROM BRANCHES b
+INNER JOIN CENTRALS c ON b.id_central_branch = c.id_central;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+-- Índices para búsquedas frecuentes
+CREATE INDEX idx_central_name ON CENTRALS(name_central);
+CREATE INDEX idx_branch_code ON BRANCHES(code_branch);
+CREATE INDEX idx_account_number ON ACCOUNTS(number_account);
+CREATE INDEX idx_account_holder_name ON ACCOUNTS_HOLDERS(name_account_holder);
+CREATE INDEX idx_transaction_type ON Transactions(type_transaction);
+
+
+-- Consulta que busca una cuenta por su número
+SELECT * FROM ACCOUNTS WHERE number_account = '1234567890';
+
+-- Consulta que filtra transacciones por tipo
+SELECT * FROM Transactions WHERE type_transaction = 'DEPOSITO';
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Vista para obtener información detallada de cuentas con sus titulares
+CREATE VIEW AccountDetails AS
+SELECT 
+    a.id_account,
+    a.number_account,
+    a.type_account,
+    a.currency_account,
+    a.balance_account,
+    ah.name_account_holder,
+    ah.email_account_holder,
+    b.name_branch AS branch_name
+FROM 
+    ACCOUNTS a
+    INNER JOIN ACCOUNTS_HOLDERS ah ON a.id_account_holder_account = ah.id_account_holder
+    INNER JOIN BRANCHES b ON a.id_branch_account = b.id_branch;
+
+-- Seleccionar datos de la vista
+SELECT * FROM AccountDetails;
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-- Procedimiento para realizar un depósito
+CREATE PROCEDURE DepositMoney
+    @account_id INT,
+    @amount DECIMAL(18, 2),
+    @atm_id INT
+AS
+BEGIN
+    BEGIN TRANSACTION;
+    -- Actualizar el saldo de la cuenta
+    UPDATE ACCOUNTS
+    SET balance_account = balance_account + @amount
+    WHERE id_account = @account_id;
+
+    -- Registrar la transacción
+    INSERT INTO Transactions (type_transaction, amount_transaction, id_account_transaction, id_atm_transaction, CREATED_DATE, UPDATED_DATE)
+    VALUES ('DEPOSITO', @amount, @account_id, @atm_id, GETDATE(), GETDATE());
+
+    COMMIT TRANSACTION;
+END;
+
+-- Ejecutar el procedimiento para depositar $100 en la cuenta con ID 1, usando el cajero con ID 1
+EXEC DepositMoney @account_id = 1, @amount = 100.00, @atm_id = 1;
+
+-- Verificar el saldo de la cuenta
+SELECT * FROM ACCOUNTS WHERE id_account = 1;
+
+-- Verificar la transacción registrada
+SELECT * FROM Transactions WHERE id_account_transaction = 1;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Tabla de auditoría para ACCOUNTS
+CREATE TABLE AuditAccounts
+(
+    id_audit INT PRIMARY KEY IDENTITY(1,1),
+    id_account INT,
+    old_balance DECIMAL(18,2),
+    new_balance DECIMAL(18,2),
+    change_date DATETIME,
+    user_action NVARCHAR(50)
+);
+
+-- Trigger para auditar cambios en el saldo de las cuentas
+CREATE TRIGGER trg_AuditAccountBalance
+ON ACCOUNTS
+AFTER UPDATE
+AS
+BEGIN
+    INSERT INTO AuditAccounts (id_account, old_balance, new_balance, change_date, user_action)
+    SELECT 
+        i.id_account,
+        d.balance_account AS old_balance,
+        i.balance_account AS new_balance,
+        GETDATE(),
+        SYSTEM_USER
+    FROM 
+        inserted i
+        INNER JOIN deleted d ON i.id_account = d.id_account;
+END;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
