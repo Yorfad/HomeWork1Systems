@@ -29,4 +29,4 @@ SELECT * FROM ACCOUNTS;
 SELECT * FROM TRANSACTIONS;
 
 
-
+Translated with DeepL.com (free version)
